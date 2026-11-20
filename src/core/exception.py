@@ -1,6 +1,6 @@
-from loguru import logger
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from loguru import logger
 from pydantic import ValidationError
 from starlette import status
 
@@ -10,6 +10,7 @@ from src.core.app_enum import BizStatus
 class AuthException(Exception):
     def __init__(self, name: str):
         self.name = name
+
 
 def setup_exception_handlers(app: FastAPI) -> None:
     """集中注册全局异常处理器

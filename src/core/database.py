@@ -11,8 +11,11 @@ from src.core.config import get_settings, Settings
 def get_engine() -> AsyncEngine:
     """全局单例引擎，第一次调用时创建，之后直接取缓存"""
     settings: Settings = get_settings()
+    db_url = settings.database_url
+    if db_url is None:
+        raise ValueError("Database url is None, Please check .env files.")
     return create_async_engine(
-        settings.database_url,
+        db_url,
         pool_size=settings.database_pool_size,
         max_overflow=settings.database_max_overflow,
         echo=False,

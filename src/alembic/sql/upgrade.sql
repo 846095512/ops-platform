@@ -59,7 +59,7 @@ CREATE TABLE `system` (
     PRIMARY KEY (id)
 )COMMENT='系统表';
 
-INSERT INTO `system` (id, secret_key) VALUES ('f9db678c19974379acad94e5b5ab0000', '93d2803230314efa827ef46457ce86f8');
+INSERT INTO `system` (id, secret_key) VALUES ('f9db678c19974379acad94e5b5ab0000', '51bb39cbf3414a4cb3214be1f5abd956');
 
 INSERT INTO alembic_version (version_num) VALUES ('version0.20261113');
 

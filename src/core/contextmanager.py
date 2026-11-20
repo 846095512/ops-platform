@@ -1,11 +1,11 @@
-from loguru import logger
 from contextlib import asynccontextmanager, AsyncExitStack
+
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
+from loguru import logger
 
 from src.core.security import security
 from src.service.login_service import fetch_secret_key_from_db
-
 
 
 @asynccontextmanager

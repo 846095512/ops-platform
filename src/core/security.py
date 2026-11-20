@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-from loguru import logger
 from zoneinfo import ZoneInfo
+
 import jwt
 from jwt import PyJWTError
+from loguru import logger
 
 from src.core.config import Settings, get_settings
 from src.schemas.jwt_payload import JwtPayload
-
 
 settings: Settings = get_settings()
 algorithm: str = "HS256"
@@ -48,11 +48,11 @@ async def create_access_token(payload: JwtPayload, jwt_token_expire_min: int | f
     return jwt.encode(payload.model_dump(exclude_none=True), secret_key, algorithm=algorithm)
 
 
-async def verify_jwt_token(token: str) -> bool:
+async def verify_token(token: str) -> bool:
     try:
         secret_key = security.secret_key
     except RuntimeError:
-        raise ValueError("System not ready, secret key missing.")
+        raise "System not ready, secret key missing."
 
     try:
         payload = jwt.decode(token, secret_key, algorithms=algorithm)
@@ -61,4 +61,11 @@ async def verify_jwt_token(token: str) -> bool:
         return payload
     except PyJWTError as e:
         logger.warning(f"Verify JWT Token Failed, Error: {e}")
-        raise ValueError("Invalid or expired token")
+        raise "Invalid or expired token"
+
+
+async def verify_apikey(apikey: str) -> str:
+    key = apikey
+    if not key:
+        pass
+    return key

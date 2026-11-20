@@ -2,10 +2,12 @@ import time
 from contextvars import ContextVar
 from uuid import uuid4
 
+from fastapi import Request, Response, HTTPException
 from loguru import logger
-from fastapi import Request, Response
 from starlette.datastructures import Address
 
+from core.security import verify_token, verify_apikey
+from schemas.response import ApiResponse
 from src.core.config import get_settings, Settings
 
 settings: Settings = get_settings()
@@ -51,46 +53,44 @@ async def api_logging_middleware(request: Request, call_next) -> Response:
             )
             raise
 
-"""
-async def dispatch(self, request: Request, call_next):
-    # 1. 白名单路径直接放行
-    if _is_public_path(request.url.path):
+
+def _unauthorized() -> ApiResponse:
+    return ApiResponse(code=401, message="", data=None)
+
+
+async def api_auth_middleware(request: Request, call_next):
+    path = request.url.path
+
+    # 0. CORS 预检放行
+    if request.method == "OPTIONS":
         return await call_next(request)
 
-    # 2. 提取凭证
+    # 1. 白名单放行
+    if any(path.startswith(w) for w in settings.WHITE_LIST):
+        return await call_next(request)
+
+    # 2. 提取 token
+    token = None
     auth_header = request.headers.get("Authorization")
-    api_key = request.headers.get("X-API-Key")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+    token = token or request.query_params.get("token") or request.headers.get("X-Token")
 
-    user_context = None
+    # 3. 提取 apikey（query 参数，兼容 Header X-API-Key）
+    apikey = request.query_params.get("apikey") or request.headers.get("X-API-Key")
 
-    # 3. JWT 认证（前端用户）
-    if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.split(" ", 1)[1]
-        user_context = await verify_jwt_token(token)
+    try:
+        if token:
+            request.state.auth_type = "token"
+            request.state.user = verify_token(token)
+        elif apikey:
+            request.state.auth_type = "apikey"
+            request.state.user = verify_apikey(apikey)
+        else:
+            return _unauthorized()
 
-    # 4. API Key 认证（第三方）
-    elif api_key:
-        user_context = await validate_api_key(api_key)
-
-    # 5. 认证失败
-    if user_context is None:
-        return False
-
-    # 6. 将用户上下文注入 request.state，供下游使用
-    request.state.user = user_context
-
-    # 7. 可选：将身份信息透传到请求头（微服务场景）
-    request.scope["headers"] = [
-        *request.scope["headers"],
-        (b"x-user-id", user_context.user_id.encode()),
-        (b"x-auth-type", user_context.auth_type.value.encode()),
-    ]
-
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise
     return await call_next(request)
-
-
-def _is_public_path(self, path: str) -> bool:
-    白名单：健康检查、登录、注册等公开接口
-    public_prefixes = settings.PUBLIC_PATHS
-    return any(path.startswith(prefix) for prefix in public_prefixes)
-"""

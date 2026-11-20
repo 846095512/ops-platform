@@ -9,8 +9,7 @@ config: Config = context.config
 target_metadata: MetaData = SQLModel.metadata
 
 settings: Settings = get_settings()
-db_url: str = settings.database_url
-
+db_url: str = settings.database_url or ""
 
 if not db_url:
     raise RuntimeError(f" database url is not defined......")

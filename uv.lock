@@ -84,6 +84,19 @@ wheels = [
 ]
 
 [[package]]
+name = "asyncssh"
+version = "2.24.1"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/0f/c5/41a0d5477865c48cee65050586092dc3ba3fc1c52e29b47fba08d3a44581/asyncssh-2.24.1.tar.gz", hash = "sha256:efcd36e9b35f79873535b06444a7c9b0a3c61d97081b208c7fdd3fd8a40f1eca" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/07/e5/8bc721f04ff545c5a84c9c23fbf788fbb56960bb57a86c6366bc35be0f66/asyncssh-2.24.1-py3-none-any.whl", hash = "sha256:fc560b4f43be0f0c602d184783e5e3876f5d24d933a25359d86e5a50a5f46fe5" },
+]
+
+[[package]]
 name = "boto3"
 version = "1.44.5"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -472,7 +485,7 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.163.1"
+version = "0.165.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 dependencies = [
     { name = "annotated-doc" },
@@ -483,9 +496,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/a4/62/19000d0f3699cacaeffe8a3c4cc7046d87aac3291163ffeb2ef08b82d859/fastapi-0.163.1.tar.gz", hash = "sha256:3d364b02a68b67292e833ff2dfed3b8dc3aeadf73e271c15316c6c166668792f" }
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/27/f9/e7820ef181026fea100bde02d811445bf8e883362d7092b6928767147056/fastapi-0.165.0.tar.gz", hash = "sha256:dd94d4128319c1e1d50535ab023ab698f850a4d2822f0e181747b46f4ff3c0ab" }
 wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/20/b6/2424da1e40825d3fc54539621811f34e21472499677c9490e4967270e38e/fastapi-0.163.1-py3-none-any.whl", hash = "sha256:68f2d8050f5c3583121c0d203046cc7def5c16a7d6c43a0e7707a8ea610fe2d3" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/c4/c1/3b74c030262a1b38b1fee180f80b4007bbc11c9ac12028cb18c7bcecaec9/fastapi-0.165.0-py3-none-any.whl", hash = "sha256:896f48462042bb4f162147eb8fac7e858753dc1f486765709baf105d70e4fc5b" },
 ]
 
 [package.optional-dependencies]
@@ -1208,6 +1221,7 @@ dependencies = [
     { name = "aiofiles" },
     { name = "aiomysql" },
     { name = "alembic" },
+    { name = "asyncssh" },
     { name = "boto3" },
     { name = "boto3-stubs" },
     { name = "cryptography" },
@@ -1230,10 +1244,11 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
     { name = "aiomysql", specifier = ">=0.3.2" },
     { name = "alembic", specifier = ">=1.16.0" },
+    { name = "asyncssh", specifier = ">=2.24.1" },
     { name = "boto3", specifier = ">=1.44.5" },
     { name = "boto3-stubs", specifier = ">=1.44.5" },
     { name = "cryptography", specifier = ">=50.0.2" },
-    { name = "fastapi", extras = ["standard"], specifier = "==0.163.1" },
+    { name = "fastapi", extras = ["standard"], specifier = "==0.165.0" },
     { name = "gunicorn", specifier = ">=27.0.1" },
     { name = "loguru", specifier = ">=0.8.0" },
     { name = "phonenumbers", specifier = ">=9.0.43" },

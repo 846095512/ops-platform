@@ -1,18 +1,29 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlparse
+from urllib.parse import quote_plus
 
 from loguru import logger
-from pydantic import Field, field_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = Field(
-        default="mysql+aiomysql://root:123456@localhost:3306/ops?charset=utf8mb4&connect_timeout=10")
+    """
+        全局配置获取
+    """
+    database_username: str | None = Field(default=None, description="数据库用户")
+    database_password: str | None = Field(default=None, description="数据库密码")
+    database_host: str | None = Field(default=None, description="数据库地址")
+    database_port: int | None = Field(default=None, description="数据库端口")
+    database_name: str | None = Field(default=None, description="库名")
+
+    database_driver: str = Field(default="aiomysql", description="数据库驱动")
+    database_type: str = Field(default="mysql", description="数据库类型")
+    database_connect_timeout: int = Field(default=30, description="连接超时时间")
     database_charset: str = Field(default="utf8mb4", description="数据库字符集")
-    database_collation: str = Field(default="utf8mb4_unicode_ci", description="排序规则")
+
+    database_url: str | None = Field(default=None, description="数据库连接串")
     database_pool_size: int = Field(default=10, description="常驻连接数"
                                                             "公式: (并发请求数 / 每请求平均查询数) * 1.5")
     database_max_overflow: int = Field(default=10,
@@ -38,6 +49,7 @@ class Settings(BaseSettings):
     log_level_console: str = Field(default="INFO", description="控制台日志级别")
     log_level_app: str = Field(default="INFO", description="业务文件日志级别")
     log_level_error: str = Field(default="ERROR", description="错误文件日志级别")
+    log_level_root: str = Field(default="INFO", description="根文件日志级别")
     log_backup_count: int = Field(default=15, description="日志文件保留个数(时间轮转时即为保留天数)")
     log_encoding: str = Field(default="utf-8", description="日志文件编码")
     log_format: str = Field(
@@ -69,27 +81,38 @@ class Settings(BaseSettings):
                                       case_sensitive=False,
                                       extra="ignore")
 
-    @field_validator("database_url")
-    @classmethod
-    def _validate_database_url(cls,
-                               connection_url: str) -> str:
-        parsed_url = urlparse(connection_url)
-        if not parsed_url.scheme.startswith("mysql"):
-            raise ValueError(f"database_url need start with mysql，current is: {parsed_url.scheme}")
-        if not parsed_url.path.lstrip("/"):
-            raise ValueError(f"database_url need contain database name, current is: {connection_url}")
-        return connection_url
+    @model_validator(mode="after")
+    def validate_and_build_url(self):
+        """
+        验证提供的数据库参数
+        如果提供了完整的database_url,直接使用database_url作为数据库连接url
+        没有database_url,则要求提供数据库连接参数
+        :return: 数据库连接串 如: mysql+aiomysql://user:password@host:port/database_name
+        """
+        if self.database_url:
+            return self
 
-    @property
-    def database_name(self) -> str:
-        """从 database_url 解析出的库名"""
-        return urlparse(self.database_url).path.lstrip("/")
+        required_fields = {
+            "database_username": self.database_username,
+            "database_password": self.database_password,
+            "database_host": self.database_host,
+            "database_port": self.database_port,
+            "database_name": self.database_name,
+        }
 
-    @property
-    def server_url(self) -> str:
-        """不含库名的连接串，用于建库"""
-        parsed_url = urlparse(self.database_url)
-        return f"{parsed_url.scheme}://{parsed_url.netloc}"
+        missing = [k for k, v in required_fields.items() if v is None]
+        if missing:
+            raise ValueError(
+                f"If database_url is not provided, the following configuration must be provided: {','.join(missing)}")
+        password: str = self.database_password or ""
+        self.database_url = (
+            f"{self.database_type}+{self.database_driver}://{self.database_username}"
+            f":{quote_plus(password)}@"
+            f"{self.database_host}:{self.database_port}/"
+            f"{self.database_name}"
+            f"?charset={self.database_charset}&connect_timeout={self.database_connect_timeout}"
+        )
+        return self
 
 
 @lru_cache
@@ -97,5 +120,5 @@ def get_settings() -> Settings:
     try:
         return Settings()
     except Exception as e:
-        logger.exception("app config file load error, plz check .env file......")
+        logger.exception("app config file load error, Please check the location of the .env file.")
         raise e

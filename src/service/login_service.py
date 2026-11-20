@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from sqlmodel import col
 
-from src.models.system import System
 from src.core.tools import CURRENT_APP_ID
+from src.models.system import System
 
 
 async def fetch_secret_key_from_db() -> str:
@@ -21,9 +21,11 @@ async def fetch_secret_key_from_db() -> str:
         )
         async with session_local() as session:
             result = await session.execute(select(System).where(col(System.id) == CURRENT_APP_ID))
-            sk = result.scalar_one_or_none().secret_key
+            res = result.scalar_one_or_none()
+            if res is None:
+                raise ValueError("Result is None, Please check database system table ")
+            sk = res.secret_key
 
-            print(sk)
         if not sk:
             logger.warning("Secret key not found in DB, using fallback.")
             raise RuntimeError("DB secret key not found in DB")
