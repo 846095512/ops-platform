@@ -3,15 +3,18 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import quote_plus
 
-from loguru import logger
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+@lru_cache
 class Settings(BaseSettings):
     """
         全局配置获取
     """
+    current_app_id: str = Field(default="opsplatform74379acad94e5b5ab9999", description="本应用id")
+    algorithm: str = Field(default="HS256", description="加密算法类型")
+    jwt_token_expire: int = Field(default=30, description="jwt token过期时间,默认30分钟")
     database_username: str | None = Field(default=None, description="数据库用户")
     database_password: str | None = Field(default=None, description="数据库密码")
     database_host: str | None = Field(default=None, description="数据库地址")
@@ -44,7 +47,7 @@ class Settings(BaseSettings):
         default="size",
         description="日志轮转类型, 可选: size(按大小) 或 time(按时间)"
     )
-    log_max_size: int = Field(default=20 * 1024 * 1024, description="日志文件大小(size轮转生效)")
+    log_max_size: int = Field(default=20 * 1024 ** 2, description="日志文件大小(size轮转生效)")
     log_when: str = Field(default="midnight", description="时间轮转单位(time轮转生效), 如 midnight, H, D")
     log_level_console: str = Field(default="INFO", description="控制台日志级别")
     log_level_app: str = Field(default="INFO", description="业务文件日志级别")
@@ -75,6 +78,17 @@ class Settings(BaseSettings):
     s3_secret_key: str = Field(default="", description="s3 sk")
     s3_bucket: str = Field(default="", description="s3 bucket")
     s3_region: str = Field(default="", description="s3 region")
+
+    default_page_lines: int = Field(default=200, description="日志首屏行数,前端可按屏高覆盖")
+    max_page_lines: int = Field(default=1000, description="一页最大行数")
+    max_line_chars: int = Field(default=4000, description="单行最大字符数")
+    max_search_lines: int = Field(default=500, description="搜索单页最大匹配行")
+
+    deploy_timeout: int = Field(default=3600, description="部署超时时间,默认1小时")
+    line_count_ttl_sec: int = Field(default=300, description="总行数缓存时间,默认5分钟")
+    deploy_log_max_bytes: int = Field(default=10 * 1024 ** 3, description="部署日志最大保存大小,默认10G")
+    deploy_log_keep_days: int = Field(default=30, description="部署日志最大保存时间,默认30天")
+    buffer_max: int = Field(default=500, description="缓冲区大小")
 
     model_config = SettingsConfigDict(env_file=Path(__file__).resolve().parents[1] / ".env",
                                       env_file_encoding="utf-8",
@@ -115,10 +129,4 @@ class Settings(BaseSettings):
         return self
 
 
-@lru_cache
-def get_settings() -> Settings:
-    try:
-        return Settings()
-    except Exception as e:
-        logger.exception("app config file load error, Please check the location of the .env file.")
-        raise e
+settings = Settings()

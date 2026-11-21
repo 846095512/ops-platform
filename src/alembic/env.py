@@ -3,18 +3,14 @@ from alembic.config import Config
 from sqlalchemy import pool, MetaData
 from sqlmodel import SQLModel
 
-from src.core.config import get_settings, Settings
+from src.core.config import settings
+from src.core.tools import require
 
 config: Config = context.config
 target_metadata: MetaData = SQLModel.metadata
 
-settings: Settings = get_settings()
-db_url: str = settings.database_url or ""
-
-if not db_url:
-    raise RuntimeError(f" database url is not defined......")
-
-sync_db_url: str = db_url.replace("+asyncmy", "+pymysql").replace("+aiomysql", "+pymysql")
+database_url: str = (require(settings.database_url).
+                     replace("+asyncmy", "+pymysql").replace("+aiomysql", "+pymysql"))
 
 
 def run_migrations_offline() -> None:
@@ -30,7 +26,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=sync_db_url,
+        url=database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -49,7 +45,7 @@ def run_migrations_online() -> None:
     """
     from sqlalchemy import create_engine
     connectable = create_engine(
-        sync_db_url,
+        database_url,
         poolclass=pool.NullPool,
     )
 

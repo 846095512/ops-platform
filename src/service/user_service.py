@@ -6,11 +6,9 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, CursorResult
 from sqlmodel import col
 
-from src.core.config import Settings, get_settings
+from src.core.config import settings
 from src.models.user import User
 from src.schemas.user import UserCreate
-
-settings: Settings = get_settings()
 
 
 class UserService:

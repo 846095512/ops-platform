@@ -11,15 +11,13 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import Table
 
-from src.core.config import Settings, get_settings
+from src.core.config import settings
 
 # revision identifiers, used by Alembic.
 revision = "version0.20261113"
 down_revision = None
 branch_labels = None
 depends_on = None
-
-settings: Settings = get_settings()
 
 
 def create_user_table() -> None:
@@ -119,7 +117,7 @@ def create_system_table() -> None:
 
     op.bulk_insert(
         system_table,
-        [{"id": "f9db678c19974379acad94e5b5ab0000", "secret_key": uuid4().hex}])
+        [{"id": settings.current_app_id, "secret_key": uuid4().hex}])
 
 
 def rollback_system_table() -> None:

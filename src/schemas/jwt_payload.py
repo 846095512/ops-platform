@@ -4,9 +4,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
 
-from src.core.config import get_settings, Settings
-
-settings: Settings = get_settings()
+from src.core.config import settings
 
 
 class JwtPayload(BaseModel):

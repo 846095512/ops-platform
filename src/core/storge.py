@@ -5,7 +5,7 @@ from typing import BinaryIO
 import aiofiles
 import boto3
 
-from src.core.config import Settings, get_settings
+from src.core.config import settings
 
 
 class BackendStorge(ABC):

@@ -1,18 +1,31 @@
 from contextlib import asynccontextmanager, AsyncExitStack
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
+from filelock import FileLock, Timeout
 from loguru import logger
-
-from src.core.security import security
-from src.service.login_service import fetch_secret_key_from_db
 
 
 @asynccontextmanager
 async def lifespan_migration(_app: FastAPI):
     from src.core.migration import run_migrations
-    # 将同步的阻塞代码放入线程池运行，防止阻塞主事件循环
-    await run_in_threadpool(run_migrations)
+    """
+    使用 filelock 实现跨平台文件锁。
+    通过 set 检查，防止多个 worker 同时执行迁移导致冲突。
+    """
+    lock_file_path = Path(__file__).resolve().parent / "migration.lock"
+    lock = FileLock(lock_file_path, timeout=60)
+    try:
+        with lock.acquire(timeout=0):
+            logger.info("Migration lock acquired. Running database migrations...")
+            await run_in_threadpool(run_migrations)
+            logger.info("Database migrations completed.")
+    except Timeout:
+        logger.warning("Migration lock is held by another process. Skipping migrations.")
+    except Exception as e:
+        logger.exception(f"Unexpected error while acquiring lock or running migrations: {e}")
+        raise e
     yield
 
 
@@ -26,24 +39,11 @@ async def lifespan_database(_app: FastAPI):
 
 
 @asynccontextmanager
-async def lifespan_get_secret_key(_app: FastAPI):
-    sk = await fetch_secret_key_from_db()
-    security.set_secret_key(sk)
-    logger.info("Secret key loaded successfully!")
-    yield
-    security.clear()
-
-
-@asynccontextmanager
 async def combined_lifespan(_app: FastAPI):
     try:
         async with AsyncExitStack() as stack:
-
             await stack.enter_async_context(lifespan_migration(_app))
-
             await stack.enter_async_context(lifespan_database(_app))
-
-            await stack.enter_async_context(lifespan_get_secret_key(_app))
             yield
     except Exception as exc:
         logger.exception(exc)

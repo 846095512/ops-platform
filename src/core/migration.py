@@ -7,16 +7,8 @@ from alembic.config import Config
 from loguru import logger
 from sqlalchemy import pool, text, create_engine, Engine
 
-from src.core.config import get_settings, Settings
-
-settings: Settings = get_settings()
-
-
-def get_sync_db_url() -> str:
-    db_url: str | None = settings.database_url
-    if db_url is None:
-        raise RuntimeError(f"Database url not found: {db_url}")
-    return db_url.replace("+asyncmy", "+pymysql").replace("+aiomysql", "+pymysql")
+from src.core.config import settings
+from src.core.tools import require
 
 
 def _create_database_if_not_exists() -> None:
@@ -24,12 +16,13 @@ def _create_database_if_not_exists() -> None:
         将异步连接库替换为同步库,执行SQL升级时,同步执行
         并确保创建ops库
     """
-    database_url = ""
     engine: Engine | None = None
     try:
-        parsed = urlparse(get_sync_db_url())
+        database_url = (require(settings.database_url).replace("+asyncmy", "+pymysql").replace("+aiomysql", "+pymysql"))
+        parsed = urlparse(database_url)
         database_name = parsed.path.lstrip("/")
         database_url = f"{parsed.scheme}://{parsed.netloc}"
+        print(database_url)
         engine: Engine = create_engine(
             database_url,
             poolclass=pool.NullPool,
@@ -53,14 +46,15 @@ def run_migrations():
 
     alembic_cfg_path: Path = Path(__file__).parent.parent / "alembic.ini"
     alembic_cfg: Config = Config(str(alembic_cfg_path))
-    sql_output_dir: Path = Path(get_settings().migration_dir).resolve()
+    sql_output_dir: Path = Path(settings.migration_dir).resolve()
     sql_output_dir.mkdir(parents=True, exist_ok=True)
 
     if not alembic_cfg_path.exists():
         raise FileNotFoundError(f"alembic.ini not found: {alembic_cfg_path}")
 
     # 1. 动态注入数据库连接串（防止 alembic.ini 中写死或为空）
-    sync_db_url = get_sync_db_url()
+    sync_db_url = database_url = (require(settings.database_url).
+                                  replace("+asyncmy", "+pymysql").replace("+aiomysql", "+pymysql"))
     alembic_cfg.set_main_option("sqlalchemy.url", sync_db_url)
     sql_file_path: Path = Path(sql_output_dir) / "upgrade.sql"
 

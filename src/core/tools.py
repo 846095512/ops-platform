@@ -1,16 +1,55 @@
 import base64
 import os
-from typing import Tuple
+from collections.abc import Sized
+from typing import Tuple, TypeVar
 
 import asyncssh
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+from sqlmodel import col
 
-from src.core.config import get_settings, Settings
-from src.core.security import security
+from src.core.config import settings
+from src.models.system import System
 
-settings: Settings = get_settings()
-CURRENT_APP_ID: str = "f9db678c19974379acad94e5b5ab0000"
+T = TypeVar("T")
+
+
+def require(value: T | None) -> T:
+    if value is None:
+        raise ValueError(f"{value} cannot be empty.")
+    if isinstance(value, Sized) and len(value) == 0:
+        raise ValueError(f"{value} cannot be empty.")
+    return value
+
+
+async def get_secret_key() -> str:
+    """
+       从数据库查询真正的 Secret Key。
+    """
+    from core.database import get_engine
+    try:
+        session_local = async_sessionmaker(
+            bind=get_engine(),
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+        async with session_local() as session:
+            result = await session.execute(select(System).where(col(System.id) == settings.current_app_id))
+            res = result.scalar_one_or_none()
+            if res is None:
+                raise ValueError("Result is None, Please check database system table ")
+            sk = res.secret_key
+
+        if not sk:
+            logger.warning("Secret key not found in DB, using fallback.")
+            raise RuntimeError("DB secret key not found in DB")
+        return sk
+    except Exception as e:
+        logger.exception("Failed to fetch secret key from DB")
+        raise RuntimeError(f"DB secret key retrieval error: {e}")
 
 
 async def encrypt_password(plain_password: str) -> str:
@@ -22,7 +61,7 @@ async def encrypt_password(plain_password: str) -> str:
     if not plain_password:
         raise ValueError("Password cannot be empty...")
 
-    codec: AESGCM = AESGCM(bytes.fromhex(security.SECRET_KEY))
+    codec: AESGCM = AESGCM(bytes.fromhex(get_secret_key()))
 
     if codec is None:
         raise RuntimeError(
@@ -45,7 +84,7 @@ async def decrypt_password(token: str) -> str:
     if not token:
         raise ValueError("Hashed password cannot be empty...")
 
-    codec: AESGCM = AESGCM(bytes.fromhex(security.SECRET_KEY))
+    codec: AESGCM = AESGCM(bytes.fromhex(get_secret_key()))
 
     try:
         combined = base64.urlsafe_b64decode(token.encode("ascii"))

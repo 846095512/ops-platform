@@ -34,13 +34,15 @@ async def read_users(username, password):
     logger.info(token)
 
 
+'''
+
 @router.post("/hosts/connect", response_model=ApiResponse)
 async def connect_and_save_host(
         request: Request,
         service: UserServiceDe):
-    """
-    测试主机连接，成功后生成密钥、下发公钥并保存主机信息
-    """
+  
+    """测试主机连接，成功后生成密钥、下发公钥并保存主机信息 """
+    
     # 1. 检查主机是否已存在
     result = await db.execute(select(Host).where(Host.ip == request.ip))
     existing_host = result.scalar_one_or_none()
@@ -93,3 +95,4 @@ async def login(username: str, password: str):
     }
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return {"code": 200, "token": token}
+'''

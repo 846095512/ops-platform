@@ -42,7 +42,8 @@ CREATE TABLE host (
     password VARCHAR(255) NOT NULL COMMENT '密码', 
     port INTEGER NOT NULL COMMENT '端口', 
     status INTEGER NOT NULL COMMENT '0=online 1=offline', 
-    deploy_path VARCHAR(255) NOT NULL COMMENT '部署家目录', 
+    private_key_path VARCHAR(255) NOT NULL COMMENT '私钥路径', 
+    deploy_path VARCHAR(255) NOT NULL COMMENT '部署路径', 
     create_time DATETIME NOT NULL COMMENT '创建时间', 
     update_time DATETIME COMMENT '更新时间', 
     delete_time DATETIME COMMENT '删除时间', 
@@ -59,7 +60,7 @@ CREATE TABLE `system` (
     PRIMARY KEY (id)
 )COMMENT='系统表';
 
-INSERT INTO `system` (id, secret_key) VALUES ('f9db678c19974379acad94e5b5ab0000', '51bb39cbf3414a4cb3214be1f5abd956');
+INSERT INTO `system` (id, secret_key) VALUES ('f9db678c19974379acad94e5b5ab0000', '22baef689fc04625855dd492c90c9ab3');
 
 INSERT INTO alembic_version (version_num) VALUES ('version0.20261113');
 

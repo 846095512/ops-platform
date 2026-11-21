@@ -6,9 +6,7 @@ from zoneinfo import ZoneInfo
 from pydantic import field_validator, NaiveDatetime
 from sqlmodel import Field, SQLModel
 
-from src.core.config import Settings, get_settings
-
-settings: Settings = get_settings()
+from src.core.config import settings
 
 
 class Host(SQLModel, table=True):

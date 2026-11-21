@@ -2,10 +2,6 @@ from uuid import uuid4
 
 from sqlmodel import Field, SQLModel
 
-from src.core.config import get_settings
-
-settings = get_settings()
-
 
 class System(SQLModel, table=True):
     __tablename__ = "system"

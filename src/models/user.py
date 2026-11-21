@@ -8,9 +8,7 @@ from sqlalchemy import Index, text, event
 from sqlalchemy.orm import with_loader_criteria, Session
 from sqlmodel import Field, SQLModel
 
-from src.core.config import Settings, get_settings
-
-settings: Settings = get_settings()
+from src.core.config import settings
 
 
 class User(SQLModel, table=True):

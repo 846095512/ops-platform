@@ -7,9 +7,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from src.core.config import get_settings, Settings
-
-settings: Settings = get_settings()
+from src.core.config import settings
 
 # 异步安全的请求上下文；未进入请求时默认 "-"
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")

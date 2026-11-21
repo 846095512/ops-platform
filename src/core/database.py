@@ -4,16 +4,14 @@ from typing import Any, AsyncGenerator
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 
-from src.core.config import get_settings, Settings
+from src.core.tools import require
+from src.core.config import settings
 
 
 @lru_cache
 def get_engine() -> AsyncEngine:
     """全局单例引擎，第一次调用时创建，之后直接取缓存"""
-    settings: Settings = get_settings()
-    db_url = settings.database_url
-    if db_url is None:
-        raise ValueError("Database url is None, Please check .env files.")
+    db_url = require(settings.database_url)
     return create_async_engine(
         db_url,
         pool_size=settings.database_pool_size,

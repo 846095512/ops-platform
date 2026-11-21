@@ -6,11 +6,10 @@ from fastapi import Request, Response, HTTPException
 from loguru import logger
 from starlette.datastructures import Address
 
-from core.security import verify_token, verify_apikey
-from schemas.response import ApiResponse
-from src.core.config import get_settings, Settings
+from src.core.security import verify_token, verify_apikey
+from src.schemas.response import ApiResponse
+from src.core.config import settings
 
-settings: Settings = get_settings()
 request_id_ctx: ContextVar[str] = ContextVar("request_id", default="-")
 
 
@@ -88,9 +87,6 @@ async def api_auth_middleware(request: Request, call_next):
             request.state.user = verify_apikey(apikey)
         else:
             return _unauthorized()
-
     except HTTPException as e:
-        raise
-    except Exception as e:
-        raise
+        raise e
     return await call_next(request)
